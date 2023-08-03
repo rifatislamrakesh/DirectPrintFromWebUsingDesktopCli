@@ -1,8 +1,5 @@
 ﻿using CommandLine;
-using DirectPrint;
 using OpenCliApplicationFromBrowser;
-
-Console.WriteLine("Starting the application.");
 
 try
 {
@@ -14,4 +11,4 @@ catch (Exception e)
     Console.WriteLine("Something went wrong. Message: " + e.Message);
 }
 
-Console.ReadLine();
+//Console.ReadLine();

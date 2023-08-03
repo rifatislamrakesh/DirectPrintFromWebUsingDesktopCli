@@ -16,12 +16,11 @@ namespace DirectPrint
             {
                 DirectDraw();
 
-                Console.WriteLine("PDF conversion complete.");
                 return true;
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error:" + e);
+                Console.WriteLine("Something went wrong when printing. Message:" + e.Message);
                 return false;
             }
         }

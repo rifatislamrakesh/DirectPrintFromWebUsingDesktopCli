@@ -12,7 +12,7 @@ namespace OpenCliApplicationFromBrowser
             {
                 if (options.Open && !string.IsNullOrEmpty(options.Invoice))
                 {
-                    Console.WriteLine("Fetched Invoice: " + ExtractInvoiceId(options.Invoice));
+                    string invoiceId = ExtractInvoiceId(options.Invoice);
 
                     //FETCH DATA FROM LINK
                     //IF DATA FOUND MOVE NEXT

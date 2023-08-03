@@ -8,13 +8,10 @@ namespace DirectPrint
         {
             try
             {
-                Console.WriteLine("Printing...");
-
                 PdfDocument doc = new();
                 doc.LoadFromFile(pdfFilePath);
                 doc.Print();
 
-                Console.WriteLine("Print Successful.");
                 return true;
             }
             catch (Exception ex)
