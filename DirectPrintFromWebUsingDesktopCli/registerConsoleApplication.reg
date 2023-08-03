@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\printinvoice]
+@="URL:printinvoice Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\printinvoice\shell]
+
+[HKEY_CLASSES_ROOT\printinvoice\shell\open]
+
+[HKEY_CLASSES_ROOT\printinvoice\shell\open\command]
+@="\"C:\\DirectPrintCli\\DirectPrintFromWebUsingDesktopCli.exe\" --open \"%1\" --invoice \"%1\""
