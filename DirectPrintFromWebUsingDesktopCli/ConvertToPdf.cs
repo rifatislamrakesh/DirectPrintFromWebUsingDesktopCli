@@ -60,8 +60,8 @@ namespace DirectPrint
 
             // Draw the header
             // Draw the centered header
-            string headerText = "Bholagonj Toll";
-            string headerUnderText = "Sylhet";
+            string headerText = "This is heading";
+            string headerUnderText = "Slogan";
 
             float headerWidth = fontHeader.MeasureString(headerText).Width;
             float headerUnderWidth = fontHeader.MeasureString(headerUnderText).Width;
