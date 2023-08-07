@@ -20,5 +20,20 @@ namespace DirectPrint
                 return false;
             }
         }
+
+        public static bool DirectPrint(PdfDocument doc)
+        {
+            try
+            {
+                doc.Print();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
     }
 }

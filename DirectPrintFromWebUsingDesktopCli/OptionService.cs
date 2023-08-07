@@ -14,14 +14,32 @@ namespace OpenCliApplicationFromBrowser
                 {
                     string invoiceId = ExtractInvoiceId(options.Invoice);
 
-                    //FETCH DATA FROM LINK
-                    //IF DATA FOUND MOVE NEXT
+                    if (string.IsNullOrEmpty(invoiceId))
+                    {
+                        Console.WriteLine("No Invoice ID found!");
+                        return;
+                    }
 
+                    ReceiptModel data = ApiService.GetData(invoiceId).GetAwaiter().GetResult();
+                    if (data is null)
+                    {
+                        Console.WriteLine("No data received!");
+                        return;
+                    }
+
+                    /* Uncomment if needed to save the file
                     string fileFullPath = AssemblyDirectory.GetFilePath();
+                    if (string.IsNullOrEmpty(fileFullPath))
+                    {
+                        Console.WriteLine("Path not found/error");
+                        return;
+                    }
 
-                    ConvertToPdf.HtmlToPdf();
-
+                    ConvertToPdf.SavePdf(data, fileFullPath);
                     PrintPdf.Print(fileFullPath);
+                    */
+
+                    ConvertToPdf.ConvertAndPrint(data);
                 }
                 else if (options.Open)
                 {

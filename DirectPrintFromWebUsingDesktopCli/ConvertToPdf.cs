@@ -1,20 +1,17 @@
 ﻿using DirectPrintFromWebUsingDesktopCli;
 using Spire.Pdf;
 using Spire.Pdf.Graphics;
-using Spire.Pdf.HtmlConverter;
-using Spire.Pdf.HtmlConverter.Qt;
 using System.Drawing;
-using System.Text;
 
 namespace DirectPrint
 {
     public static class ConvertToPdf
     {
-        public static bool HtmlToPdf()
+        public static bool SavePdf(ReceiptModel data, string fullPath)
         {
             try
             {
-                DirectDraw();
+                DirectDraw(data, fullPath);
 
                 return true;
             }
@@ -25,91 +22,149 @@ namespace DirectPrint
             }
         }
 
-        private static void DirectDraw()
+        public static bool ConvertAndPrint(ReceiptModel data)
         {
-            // Create an instance of your Invoice model with sample data
-            var invoice = new Invoice
+            try
             {
-                InvoiceNumber = "INV-12345",
-                CustomerName = "John Doe",
-                InvoiceDate = DateTime.Now,
-                InvoiceItems = new List<InvoiceItem>
-                {
-                    new InvoiceItem { ItemName = "Item 1", Price = 10.0m, Quantity = 2 },
-                    new InvoiceItem { ItemName = "Item 2", Price = 15.0m, Quantity = 1 },
-                    new InvoiceItem { ItemName = "Item 3", Price = 5.0m, Quantity = 3 },
-                }
-            };
+                DirectDraw(data);
 
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Something went wrong when printing. Message:" + e.Message);
+                return false;
+            }
+        }
+
+        private static void DirectDraw(ReceiptModel receipt, string fullPath = "")
+        {
             // Create a new PDF document
-            PdfDocument pdf = new();
+            PdfDocument pdf = new PdfDocument();
 
-            // Add a new page to the document
-            PdfPageBase page = pdf.Pages.Add();
+            // Set the page size to 80 x 210 mm
+            PdfUnitConvertor unitConvertor = new PdfUnitConvertor();
+            float width = unitConvertor.ConvertUnits(80, PdfGraphicsUnit.Millimeter, PdfGraphicsUnit.Point);
+            float height = unitConvertor.ConvertUnits(210, PdfGraphicsUnit.Millimeter, PdfGraphicsUnit.Point);
+            PdfPageBase page = pdf.Pages.Add(new SizeF(width, height), new PdfMargins(0));
 
-            // Create a font for the text
-            PdfFont font = new(PdfFontFamily.Helvetica, 25f);
+            // Create a font and style for the header and content
+            PdfTrueTypeFont fontHeader = new PdfTrueTypeFont(new Font("Courier New", 15f, FontStyle.Bold));
+            PdfTrueTypeFont fontUnderHeader = new PdfTrueTypeFont(new Font("Courier New", 12f, FontStyle.Bold));
+            PdfTrueTypeFont fontContent = new PdfTrueTypeFont(new Font("Courier New", 11f, FontStyle.Regular));
+            PdfTrueTypeFont fontFooter = new PdfTrueTypeFont(new Font("Courier New", 10f, FontStyle.Italic));
 
-            // Create a brush to define the text color
-            PdfSolidBrush brush = new(Color.Black);
-
-            // Define the initial position for the content
-            float x = 0f;
+            // Set the starting position for the content
+            float x = 6f;
             float y = 0f;
 
-            // Draw invoice details
-            page.Canvas.DrawString($"Invoice Number: {invoice.InvoiceNumber}", font, brush, x, y);
-            y += 20;
-            page.Canvas.DrawString($"Customer Name: {invoice.CustomerName}", font, brush, x, y);
-            y += 20;
-            page.Canvas.DrawString($"Invoice Date: {invoice.InvoiceDate:yyyy-MM-dd}", font, brush, x, y);
-            y += 40;
+            // Draw the header
+            // Draw the centered header
+            string headerText = "Bholagonj Toll";
+            string headerUnderText = "Sylhet";
 
-            // Draw invoice items table headers
-            page.Canvas.DrawString("Item Name", font, brush, x, y);
-            page.Canvas.DrawString("Price", font, brush, x + 150, y);
-            page.Canvas.DrawString("Quantity", font, brush, x + 250, y);
-            page.Canvas.DrawString("Amount", font, brush, x + 350, y);
-            y += 20;
+            float headerWidth = fontHeader.MeasureString(headerText).Width;
+            float headerUnderWidth = fontHeader.MeasureString(headerUnderText).Width;
+            float centerX = (width - headerWidth) / 2;
+            float centerUnderX = (width - headerUnderWidth) / 2;
+            page.Canvas.DrawString(headerText, fontHeader, PdfBrushes.Black, centerX, y);
+            y += 15f;
+            page.Canvas.DrawString(headerUnderText, fontUnderHeader, PdfBrushes.Black, centerUnderX, y);
+            y += 30f;
 
-            // Draw invoice items
-            foreach (var item in invoice.InvoiceItems)
+            // Find the maximum label width for alignment
+            float maxLabelWidth = Math.Max(
+                fontContent.MeasureString("Invoice ID").Width,
+                Math.Max(
+                    fontContent.MeasureString("Date & Time").Width,
+                    Math.Max(
+                        fontContent.MeasureString("Location").Width,
+                        Math.Max(
+                            fontContent.MeasureString("Counter").Width,
+                            Math.Max(
+                                fontContent.MeasureString("Collector").Width,
+                                Math.Max(
+                                    fontContent.MeasureString("Vehicle Type").Width,
+                                    Math.Max(
+                                        fontContent.MeasureString("Fare").Width,
+                                        fontContent.MeasureString("Payment Type").Width
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+
+            // Draw the content with aligned colons and maintain the same distance from the left edge
+            DrawContentWithAlignedColons(page, fontContent, "Invoice", receipt.Invoice, maxLabelWidth, ref x, ref y);
+            DrawContentWithAlignedColons(page, fontContent, "Date & Time", receipt.InvoiceDate.ToString("dd/MM/yyyy hh:mm tt"), maxLabelWidth, ref x, ref y);
+            DrawContentWithAlignedColons(page, fontContent, "Location", receipt.Location, maxLabelWidth, ref x, ref y);
+            DrawContentWithAlignedColons(page, fontContent, "Station", receipt.Station, maxLabelWidth, ref x, ref y);
+            DrawContentWithAlignedColons(page, fontContent, "Operator", receipt.Operator, maxLabelWidth, ref x, ref y);
+            DrawContentWithAlignedColons(page, fontContent, "Type", receipt.Type, maxLabelWidth, ref x, ref y);
+            DrawContentWithAlignedColons(page, fontContent, "Chargedv", receipt.Charged, maxLabelWidth, ref x, ref y);
+            DrawContentWithAlignedColons(page, fontContent, "Payment Type", receipt.PaymentType, maxLabelWidth, ref x, ref y);
+
+            // Draw the centered footer
+            const string footerText = "Powered by ...";
+            float footerWidth = fontFooter.MeasureString(footerText).Width;
+            float footerX = (width - footerWidth) / 2;
+            float footerY = y + 40f;
+            page.Canvas.DrawString(footerText, fontFooter, PdfBrushes.Black, footerX, footerY);
+
+            if (string.IsNullOrEmpty(fullPath))
             {
-                page.Canvas.DrawString(item.ItemName, font, brush, x, y);
-                page.Canvas.DrawString(item.Price.ToString("C"), font, brush, x + 150, y);
-                page.Canvas.DrawString(item.Quantity.ToString(), font, brush, x + 250, y);
-                page.Canvas.DrawString(item.Amount.ToString("C"), font, brush, x + 350, y);
-                y += 20;
+                Print(pdf);
             }
+            else
+            {
+                SaveToFolder(pdf, fullPath);
+            }
+        }
 
-            // Draw total amount
-            y += 20;
-            page.Canvas.DrawString($"Total Amount: {invoice.TotalAmount.ToString("C")}", font, brush, x, y);
-
-            // Save the PDF to a file
-            string fileFullPath = AssemblyDirectory.GetFilePath();
-
-            pdf.SaveToFile(fileFullPath);
-
-            // Close the PDF document
+        private static void SaveToFolder(PdfDocument pdf, string fullPath)
+        {
+            pdf.SaveToFile(fullPath);
             pdf.Close();
         }
-    }
 
-    public class Invoice
-    {
-        public string InvoiceNumber { get; set; }
-        public string CustomerName { get; set; }
-        public DateTime InvoiceDate { get; set; }
-        public List<InvoiceItem> InvoiceItems { get; set; }
-        public decimal TotalAmount => InvoiceItems.Sum(item => item.Amount);
-    }
+        private static void Print(PdfDocument pdf)
+        {
+            try
+            {
+                PrintPdf.DirectPrint(pdf);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Unable to print, Message: " + ex.Message);
+            }
+        }
 
-    public class InvoiceItem
-    {
-        public string ItemName { get; set; }
-        public decimal Price { get; set; }
-        public int Quantity { get; set; }
-        public decimal Amount => Price * Quantity;
+        private static void DrawContentWithAlignedColons
+            (
+            PdfPageBase page,
+            PdfTrueTypeFont font,
+            string label,
+            string value,
+            float maxLabelWidth,
+            ref float x,
+            ref float y
+            )
+        {
+            float colonWidth = font.MeasureString(":").Width;
+
+            // Calculate the position to align the colons and content
+            float labelWidth = Math.Max(font.MeasureString(label).Width, maxLabelWidth);
+            float colonX = x + labelWidth + colonWidth * 0.5f;
+            float contentX = colonX + colonWidth * 0.5f;
+
+            // Draw the label, colon, and value
+            page.Canvas.DrawString(label, font, PdfBrushes.Black, x, y);
+            page.Canvas.DrawString(":", font, PdfBrushes.Black, colonX, y);
+            page.Canvas.DrawString(value, font, PdfBrushes.Black, (contentX + 10f), y);
+
+            y += 20f;
+        }
     }
 }
